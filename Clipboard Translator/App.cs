@@ -1,12 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
 namespace Clipboard_Translator
@@ -19,12 +14,11 @@ namespace Clipboard_Translator
 
         [DllImport("User32.dll", CharSet = CharSet.Auto)]
         public static extern bool ChangeClipboardChain(IntPtr hWndRemove, IntPtr hWndNewNext);
-
-        private const int WM_DRAWCLIPBOARD = 0x0308;        // WM_DRAWCLIPBOARD message
+        // WM_DRAWCLIPBOARD 消息
+        private const int WM_DRAWCLIPBOARD = 0x0308;
         private IntPtr _clipboardViewerNext;
         private Translation _translationForm;
-        private Boolean _start = true;
-
+        private bool _start = true;
 
         public App()
         {
@@ -35,7 +29,7 @@ namespace Clipboard_Translator
         {
             _clipboardViewerNext = SetClipboardViewer(this.Handle);
             _translationForm = new Translation();
-            
+            WindowState = FormWindowState.Minimized;
         }
 
         private void App_Deactivate(object sender, EventArgs e)
@@ -53,19 +47,41 @@ namespace Clipboard_Translator
 
         protected override void WndProc(ref Message m)
         {
-            base.WndProc(ref m);    // Process the message 
+            // 处理消息
+            base.WndProc(ref m);
             if (m.Msg == WM_DRAWCLIPBOARD) {
-                IDataObject iData = Clipboard.GetDataObject();      // Clipboard's data
+                // 剪切板数据
+                IDataObject iData = Clipboard.GetDataObject();
                 if (iData.GetDataPresent(DataFormats.Text)) {
-                    string text = (string)iData.GetData(DataFormats.Text);      // Clipboard text
-                    label1.Text = text + DateTime.Now.ToString();
-                    if (_translationForm != null && _start && text.Length > 0) {
+                    // 剪切板文本
+                    string text = (string)iData.GetData(DataFormats.Text);
+                    if (_translationForm != null && _start) {
                         Activate();
-                        string translation = Program.GetWordTranslation(text);
-                        _translationForm.popupTranslation(translation);
-                          
+                        ClipboardTextTranslate(text);
                     }
                 }
+            }
+        }
+
+        private void ClipboardTextTranslate(string text)
+        {
+            // 长度不符要求
+            if (text.Length < 1 && text.Length > 500) {
+                return;
+            }
+            // 英文字母占比小于 1/2 不译
+            if(Regex.Replace(text, "[^a-zA-Z]", "").Length < text.Length / 2) {
+                return;
+            }
+            
+            // 分割单词
+            string[] words = text.Split(' ');
+            if (words.Length == 1) {
+                string translation = Program.GetWordTranslation(words.First());
+                _translationForm.PopupTranslation(translation);
+            } else {
+                string translation = Program.GetSentenceTranslation(text.Trim());
+                _translationForm.PopupTranslation(translation);
             }
         }
 
