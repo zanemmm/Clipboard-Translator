@@ -54,10 +54,9 @@ namespace Clipboard_Translator
                 IDataObject iData = Clipboard.GetDataObject();
                 if (iData.GetDataPresent(DataFormats.Text)) {
                     // 剪切板文本
-                    string text = (string)iData.GetData(DataFormats.Text);
-                    if (_translationForm != null && _start) {
-                        Activate();
-                        ClipboardTextTranslate(text);
+                    string text = ((string)iData.GetData(DataFormats.Text));
+                    if (_translationForm != null && text != null && _start) {
+                        ClipboardTextTranslate(text.Trim());
                     }
                 }
             }
@@ -66,21 +65,20 @@ namespace Clipboard_Translator
         private void ClipboardTextTranslate(string text)
         {
             // 长度不符要求
-            if (text.Length < 1 && text.Length > 500) {
+            if (text.Length < 1 || text.Length > 500) {
                 return;
             }
             // 英文字母占比小于 1/2 不译
             if(Regex.Replace(text, "[^a-zA-Z]", "").Length < text.Length / 2) {
                 return;
             }
-            
             // 分割单词
             string[] words = text.Split(' ');
             if (words.Length == 1) {
                 string translation = Program.GetWordTranslation(words.First());
                 _translationForm.PopupTranslation(translation);
             } else {
-                string translation = Program.GetSentenceTranslation(text.Trim());
+                string translation = Program.GetSentenceTranslation(text);
                 _translationForm.PopupTranslation(translation);
             }
         }

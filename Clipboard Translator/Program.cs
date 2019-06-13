@@ -28,7 +28,7 @@ namespace Clipboard_Translator
                 string transXPath = "//*[@id='phrsListTab']/div[@class='trans-container']/ul/li";
                 var transNodes = doc.DocumentNode.SelectNodes(transXPath);
                 if (transNodes == null) {
-                    return "找不到翻译";
+                    return String.Format("没有单词 {0} 的翻译结果", text);
                 }
                 string trans = "";
                 foreach (HtmlNode node in transNodes.ToList()) {
@@ -60,7 +60,7 @@ namespace Clipboard_Translator
                 string xPath = "//*[@id='fanyiToggle']/div[@class='trans-container']/p[2]";
                 var node = doc.DocumentNode.SelectSingleNode(xPath);
                 if (node == null) {
-                    return "翻译失败";
+                    return "句子翻译失败，请尝试翻译单词。";
                 }
                 return node.InnerText.Trim().Replace("\r", "").Replace("\n", "");
             } catch (Exception e) {

@@ -9,7 +9,13 @@ namespace Clipboard_Translator
     {
         [DllImport("user32.dll", EntryPoint = "SendMessage")]
         public static extern int SendMessage(IntPtr hwnd, int wMsg, int wParam, int lParam);
+
+        [DllImport("user32.dll", CharSet = CharSet.Auto)]
+        public static extern bool AnimateWindow(IntPtr hwnd, int dwTime, int dwFlags);
+
         private const int EM_GETLINECOUNT = 0xBA;
+        private const int AW_HIDE = 0x10000;
+        private const int AW_BLEND = 0x80000;
 
         public Translation()
         {
@@ -18,12 +24,10 @@ namespace Clipboard_Translator
 
         private void Translation_Deactivate(object sender, EventArgs e)
         {
-            Hide();
+            AnimateWindow(Handle, 300, AW_BLEND | AW_HIDE);
             // 重置译文窗口大小
             Translation_Text.Text = "";
-            Translation_SizeLabel.Text = "";
             Translation_Text.Size = Translation_Text.MinimumSize;
-            Translation_SizeLabel.Size = Translation_SizeLabel.MinimumSize;
             Translation_Text.ScrollBars = ScrollBars.None;
             Size = MinimumSize;
             // 关闭定时器
@@ -32,15 +36,11 @@ namespace Clipboard_Translator
 
         public void PopupTranslation(string translation)
         {
-            Translation_SizeLabel.Text = translation;
             Translation_Text.Text = translation;
-            // 通过标签的自适应宽度，设置文本框的宽度
+            Translation_Text.Select(0, 0);
+            // 设置文本框的宽度
             Size textSize = new Size();
-            if (Translation_SizeLabel.Size.Width > MaximumSize.Width) {
-                textSize.Width = MaximumSize.Width - 10;
-            } else {
-                textSize.Width = Translation_SizeLabel.Size.Width;
-            }
+            textSize.Width = Size.Width - 20;
             // 宽度确定后判断文本框高度，如果大于最大高度则出现滚动条
             int fontHeight = Translation_Text.Font.Height;
             int lineCount = SendMessage(Translation_Text.Handle, EM_GETLINECOUNT, 0, 0);
@@ -52,12 +52,14 @@ namespace Clipboard_Translator
                 textSize.Height = readyHeight;
             }
             Translation_Text.Size = textSize;
+            AnimateWindow(Handle, 300, AW_BLEND);
             Show();
             timer.Enabled = true;
         }
 
         private void Timer_Tick(object sender, EventArgs e)
         {
+            // 定时使译文窗口获得焦点，保证失去焦点事件能够触发
             Activate();
             Focus();
         }
