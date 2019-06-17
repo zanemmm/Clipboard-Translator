@@ -50,14 +50,10 @@ namespace Clipboard_Translator
             // 处理消息
             base.WndProc(ref m);
             if (m.Msg == WM_DRAWCLIPBOARD) {
-                // 剪切板数据
-                IDataObject iData = Clipboard.GetDataObject();
-                if (iData.GetDataPresent(DataFormats.Text)) {
-                    // 剪切板文本
-                    string text = ((string)iData.GetData(DataFormats.Text));
-                    if (_translationForm != null && text != null && _start) {
-                        ClipboardTextTranslate(text.Trim());
-                    }
+                // 剪切板文本
+                string text = Clipboard.GetText();
+                if (_translationForm != null && text != null && _start) {
+                    ClipboardTextTranslate(text.Trim());
                 }
             }
         }
@@ -68,8 +64,8 @@ namespace Clipboard_Translator
             if (text.Length < 1 || text.Length > 500) {
                 return;
             }
-            // 英文字母占比小于 1/2 不译
-            if(Regex.Replace(text, "[^a-zA-Z]", "").Length < text.Length / 2) {
+            // 存在不属于 ASCII 码的字符不译
+            if(Regex.IsMatch(text, "[^\x00-\x7F]")) {
                 return;
             }
             // 分割单词
